@@ -4,7 +4,14 @@ import  statsmodels.api as sm
 from sklearn.linear_model import Ridge,Lasso,LogisticRegression
 from sklearn.model_selection import train_test_split
 
+'''Firstly, we pre-process the datasets by performing feature engineering and data cleaning'''
+
+# read the trainning data
 training = pd.read_csv('2020_Competition_Training.csv')
+
+
+
+'''Dealing with binary variables'''
 
 # Collect binary varibales
 training_ind = training.loc[:,training.isin([0,1]).all()]
@@ -21,6 +28,9 @@ training_ind_corr_top20 = training_ind_corr.head(20).set_index('index')
 training_ind_top20 = training_ind.loc[:, [i for i in training_ind_corr_top20.index]]
 
 
+
+'''Dealing with categorical variables'''
+
 # Label categorical variables
 categorical_bolean = (training.dtypes == "object").values
 # Select relevant categorical variables
@@ -33,6 +43,8 @@ training_categorical['rucc_category'] = training_categorical['rucc_category'].ma
 training_dummies = pd.get_dummies(training_categorical,drop_first = True)
 
 
+
+'''Dealing with numerical variables'''
 
 # Locate numerical variables
 training_numerical = training.loc[:,~categorical_bolean]
@@ -53,6 +65,7 @@ training_numerical_corr_top20 = training_numerical_corr_top20.drop('transportati
 
 '''Combine all three datasets to get a structured dataset including 20 binary variables, 20 numerical variables, 
 3 categorical variables and transportation issue column as dependent variable'''
+
 training_semifinal = pd.concat([training.transportation_issues,training_ind_top20,training_dummies,training_numerical_corr_top20],axis = 1)
 # Drop rows with missing values
 training_final = training_semifinal.dropna()
@@ -69,6 +82,7 @@ score = result.predict(X)
 score.sort_values().reset_index()
 
 
+'''Using the same logic, we processed the testing dataset'''
 
 # Read test data
 test_data = pd.read_csv('2020_Competition_Holdout .csv')
@@ -90,6 +104,8 @@ test_final = pd.concat([test_data_ind,test_dummies,test_numerical],axis = 1)
 X_test = test_final.assign(intercept = [1.0 for i in test_final.index ])
 
 
+
+'''Fit the model with cleaned test data to get regression result table''' 
 
 # Fit
 score2 = result.predict(X_test)
@@ -120,6 +136,12 @@ y = training_final.iloc[:,0]
 logit = sm.Logit(y,X)
 result2 = logit.fit()
 result2.summary()
+
+
+
+'''Removing irrelevant variables results a much better R-square, the last thing we need to do is to input 
+   testing data to make predictions'''
+
 # Obtain test data
 test_final_lowP = test_final.loc[:,pvLow[0:-1]]
 # Add constant
